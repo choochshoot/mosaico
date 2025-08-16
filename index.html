@@ -1,332 +1,157 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Panal Neón · Lazy + HEIC→PNG/JPG</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galería Panal Neón</title>
 <style>
   :root{
-    --hex-size: 150px;
-    --gap: 1px;
+    --hex-size: 140px;
+    --gap: 2px;
     --hex-height: calc(var(--hex-size) * 1.1547);
     --vertical-overlap: calc(var(--hex-height) * 0.25);
-    --neon-color: rgba(255,255,255,0.95);
-    --neon-1: 8px;
-    --neon-2: 18px;
-    --neon-3: 36px;
-    --neon-4: 64px;
+    --neon-color: magenta;
   }
-  *{ box-sizing: border-box; }
   body{
-    margin:0; background:#050505; color:#f3f3f3;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin:0;
+    background:#0b0b0b;
+    font-family:sans-serif;
+    color:white;
+    text-align:center;
   }
-  .wrap{ max-width:1800px; margin:0 auto; padding:16px; }
-  .title{
-    margin:0 0 8px; font-weight:800; font-size:clamp(18px,2.4vw,28px);
-    text-shadow:
-      0 0 var(--neon-1) var(--neon-color),
-      0 0 var(--neon-2) var(--neon-color);
+  h1{
+    font-size:2.5rem;
+    color: var(--neon-color);
+    text-shadow: 
+      0 0 5px var(--neon-color),
+      0 0 10px var(--neon-color),
+      0 0 20px var(--neon-color),
+      0 0 40px var(--neon-color);
+    animation: neonTextPulse 2.5s ease-in-out infinite;
   }
-  .sub{ margin:0 0 14px; opacity:.82; font-size:14px; }
-
+  @keyframes neonTextPulse {
+    0%, 100% { text-shadow: 0 0 5px var(--neon-color), 0 0 10px var(--neon-color), 0 0 20px var(--neon-color), 0 0 40px var(--neon-color);}
+    50% { text-shadow: 0 0 15px var(--neon-color), 0 0 30px var(--neon-color), 0 0 60px var(--neon-color), 0 0 80px var(--neon-color);}
+  }
+  .wrap{
+    padding:16px;
+    max-width:1600px;
+    margin:auto;
+  }
   .honeycomb{
-    display:flex; flex-wrap:wrap; align-items:flex-start;
-    gap:var(--gap); margin-top: calc(var(--vertical-overlap) * -1);
+    display:flex;
+    flex-wrap:wrap;
+    gap:var(--gap);
+    margin-top: calc(var(--vertical-overlap) * -1);
+    justify-content:center;
   }
   .hex{
-    position:relative; width:var(--hex-size); height:var(--hex-height);
-    margin-top: calc(var(--vertical-overlap) * -1); flex:0 0 auto;
-    animation: floaty var(--float-dur,6s) ease-in-out infinite;
-    animation-delay: var(--float-delay,0s);
+    position:relative;
+    width:var(--hex-size);
+    height:var(--hex-height);
+    margin-top: calc(var(--vertical-overlap) * -1);
+    flex:0 0 auto;
   }
   .hex-inner{
-    position:absolute; inset:0;
-    clip-path: polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
-    overflow:hidden; background:#121212;
-    /* Marco neón alrededor de cada hexágono */
-    box-shadow:
-      0 0 var(--neon-1) var(--neon-color),
-      0 0 var(--neon-2) var(--neon-color),
-      0 0 var(--neon-3) var(--neon-color),
-      0 0 var(--neon-4) var(--neon-color);
-    filter:
-      drop-shadow(0 0 calc(var(--neon-1)*.8) var(--neon-color))
-      drop-shadow(0 0 calc(var(--neon-2)*.8) var(--neon-color));
-    border:1px solid rgba(255,255,255,.12);
+    position:absolute;
+    inset:0;
+    clip-path: polygon(
+      50% 0%,
+      93% 25%,
+      93% 75%,
+      50% 100%,
+      7% 75%,
+      7% 25%
+    );
+    overflow:hidden;
+    background:#111;
+    box-shadow: 0 0 8px var(--neon-color),
+                0 0 15px var(--neon-color),
+                0 0 25px var(--neon-color),
+                0 0 50px var(--neon-color);
+    filter: drop-shadow(0 0 5px var(--neon-color))
+            drop-shadow(0 0 15px var(--neon-color));
+    animation: neonPulse 3s ease-in-out infinite;
+  }
+  @keyframes neonPulse {
+    0%, 100% {
+      box-shadow: 0 0 8px var(--neon-color),
+                  0 0 15px var(--neon-color),
+                  0 0 25px var(--neon-color),
+                  0 0 50px var(--neon-color);
+    }
+    50% {
+      box-shadow: 0 0 15px var(--neon-color),
+                  0 0 30px var(--neon-color),
+                  0 0 50px var(--neon-color),
+                  0 0 80px var(--neon-color);
+    }
   }
   .hex img{
-    width:100%; height:100%; object-fit:cover; display:block;
-    transition: transform .28s ease, filter .28s ease;
-    filter: saturate(1.06) contrast(1.04) brightness(1.02);
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
   }
-  @keyframes floaty{
-    0%{ transform: translateY(0) rotate(0deg); }
-    25%{ transform: translateY(-2px) rotate(1deg); }
-    50%{ transform: translateY(1px) rotate(-1deg); }
-    75%{ transform: translateY(-1px) rotate(.5deg); }
-    100%{ transform: translateY(0) rotate(0deg); }
+  .row-first-offset{
+    margin-left: calc(var(--hex-size) / 2 + var(--gap) / 2);
   }
-  .hex.hovered .hex-inner{
-    box-shadow:
-      0 0 calc(var(--neon-1)*1.2) var(--neon-color),
-      0 0 calc(var(--neon-2)*1.2) var(--neon-color),
-      0 0 calc(var(--neon-3)*1.2) var(--neon-color),
-      0 0 calc(var(--neon-4)*1.2) var(--neon-color);
-    filter:
-      drop-shadow(0 0 calc(var(--neon-2)*.9) var(--neon-color))
-      drop-shadow(0 0 calc(var(--neon-3)*.7) var(--neon-color));
-  }
-  .hex.hovered img{ transform: scale(1.08); }
-  .hex.neighbor img{ transform: scale(1.03) rotate(1.2deg); }
-
-  .row-first-offset{ margin-left: calc(var(--hex-size)/2 + var(--gap)/2); }
-
-  @media (min-width:1200px){ :root{ --hex-size:170px; } }
-  @media (min-width:1600px){ :root{ --hex-size:190px; } }
-
-  .toolbar{ display:flex; gap:8px; align-items:center; margin:8px 0 14px; }
-  .btn{
-    background:#161616; border:1px solid #2a2a2a; color:#f0f0f0;
-    padding:8px 12px; border-radius:12px; font-size:13px; cursor:pointer;
-  }
-  .btn:hover{ background:#1c1c1c; }
-  .status{ font-size:13px; opacity:.82; }
-  .hide{ display:none; }
 </style>
 </head>
 <body>
+  <h1>Galería Panal Neón</h1>
   <div class="wrap">
-    <h1 class="title">C y M</h1>
-    <p class="sub">Nuestros Momentos</p>
-
-    <div class="toolbar">
-      <button id="reloadLayoutBtn" class="btn" type="button">Recalcular panal</button>
-      <span id="count" class="status"></span>
-    </div>
-
-    <div id="honeycomb" class="honeycomb" aria-live="polite"></div>
-    <div id="status" class="status">Cargando fotos…</div>
+    <div class="honeycomb" id="gallery"></div>
   </div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Fallback de conversión HEIC a JPG (si el navegador no decodifica nativamente) -->
-  <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
-  <script>
-  /******************  CONFIGURA AQUÍ  ******************/
-  const SUPABASE_URL = 'https://cskqlyauszpgjvwgenth.supabase.co';  // <-- pega aquí tu Project URL
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNza3FseWF1c3pwZ2p2d2dlbnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTY4ODMsImV4cCI6MjA3MDE5Mjg4M30.HAZEfpAH2AZzoDBmsUOe3O33oAFbcRIJksZLOyeRvPk';                    // <-- pega aquí tu anon key
-  const BUCKET_NAME = 'imagenes-usuarios';                    // <-- bucket con tus fotos
-  const FOLDER = '';  // subcarpeta dentro del bucket, si aplica. Ej: 'eventos/fiesta'
-  const useSignedUrls = false; // true si tu bucket NO es público
-  const MAX_FILES = 500;       // máximo a listar
-  const SORT_DESC = true;      // ordenar por updated_at desc
-  /******************************************************/
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  // 🔹 Pega aquí tus credenciales de Supabase
+  const SUPABASE_URL = "https://cskqlyauszpgjvwgenth.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNza3FseWF1c3pwZ2p2d2dlbnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTY4ODMsImV4cCI6MjA3MDE5Mjg4M30.HAZEfpAH2AZzoDBmsUOe3O33oAFbcRIJksZLOyeRvPk";
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const $honeycomb = document.getElementById('honeycomb');
-  const $status = document.getElementById('status');
-  const $count = document.getElementById('count');
-  const $reloadLayoutBtn = document.getElementById('reloadLayoutBtn');
+  const bucketName = "imagenes-usuarios"; // Cambia si tu bucket tiene otro nombre
+  const { createClient } = supabase;
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Listar archivos del bucket
-  async function listAllFiles(bucket, path = '', limit = MAX_FILES){
-    const pageSize = 100;
-    let all = [];
-    let offset = 0;
-    while(all.length < limit){
-      const { data, error } = await supabase.storage.from(bucket).list(path, {
-        limit: Math.min(pageSize, limit - all.length),
-        offset,
-        sortBy: { column: 'updated_at', order: SORT_DESC ? 'desc' : 'asc' }
-      });
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      const files = data.filter(x => x && x.name);
-      all = all.concat(files.map(f => (path ? path.replace(/\/+$/,'') + '/' : '') + f.name));
-      if (data.length < pageSize) break;
-      offset += data.length;
-    }
-    return all;
-  }
+  async function loadImages(){
+    const { data, error } = await supabaseClient.storage
+      .from(bucketName)
+      .list("", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
 
-  // Obtener URL pública (o firmada)
-  async function getUrl(bucket, filePath){
-    if (useSignedUrls){
-      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(filePath, 3600);
-      if (error) throw error;
-      return data.signedUrl;
-    } else {
-      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
-    }
-  }
-
-  // Crea una celda hex con animación aleatoria y <img loading="lazy" data-src="">
-  function createHexPlaceholder(){
-    const hex = document.createElement('div');
-    hex.className = 'hex';
-    // random anim params
-    hex.style.setProperty('--float-dur', (5 + Math.random()*4).toFixed(2) + 's');
-    hex.style.setProperty('--float-delay', (Math.random()*3).toFixed(2) + 's');
-
-    const inner = document.createElement('div');
-    inner.className = 'hex-inner';
-    const img = document.createElement('img');
-    img.loading = 'lazy';    // ← lazy real del navegador
-    img.decoding = 'async';
-    img.alt = 'Foto';
-    inner.appendChild(img);
-    hex.appendChild(inner);
-    return hex;
-  }
-
-  // Recalcula offsets para entrelazar filas
-  function recalcHoneycombOffsets(){
-    const cells = Array.from($honeycomb.children);
-    cells.forEach(c => c.classList.remove('row-first-offset'));
-    let currentTop = null;
-    let rowIndex = -1;
-    for (const cell of cells){
-      const top = cell.offsetTop;
-      if (currentTop === null || top !== currentTop){
-        currentTop = top; rowIndex++;
-        if (rowIndex % 2 === 1) cell.classList.add('row-first-offset');
-      }
-    }
-  }
-
-  // HEIC → PNG vía createImageBitmap (rápido); si falla, intentamos heic2any→JPG
-  async function heicToDisplayable(url){
-    try {
-      const resp = await fetch(url, { cache: 'no-store' });
-      const blob = await resp.blob();
-      // 1) intento nativo
-      try{
-        const bitmap = await createImageBitmap(blob);
-        const canvas = document.createElement('canvas');
-        canvas.width = bitmap.width; canvas.height = bitmap.height;
-        canvas.getContext('2d').drawImage(bitmap, 0, 0);
-        return canvas.toDataURL('image/png'); // PNG
-      }catch(e){
-        // 2) fallback: heic2any → JPG
-        if (window.heic2any){
-          const out = await heic2any({ blob, toType: 'image/jpeg', quality: 0.92 });
-          return URL.createObjectURL(out);
-        }
-        throw e; // re-lanza si no hay fallback
-      }
-    } catch (err){
-      console.warn('HEIC no convertible:', err);
-      return null;
-    }
-  }
-
-  // Carga perezosa real: solo descarga/convierte al entrar en viewport
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(async (entry)=>{
-      if (!entry.isIntersecting) return;
-      const img = entry.target;
-      io.unobserve(img);
-
-      const meta = img.dataset; // {src, ext}
-      let finalUrl = meta.src;
-      if (meta.ext === 'heic' || meta.ext === 'heif'){
-        const converted = await heicToDisplayable(meta.src);
-        if (!converted){
-          // omitir si no pudo convertirse
-          img.closest('.hex').style.display = 'none';
-          return;
-        }
-        finalUrl = converted;
-      }
-      img.src = finalUrl;
-    });
-  }, { rootMargin: '200px 0px', threshold: 0.01 });
-
-  // Interacciones “juego” entre celdas
-  function setupHoverPlay(){
-    function neighbors(idx, max=6){
-      const cells = Array.from($honeycomb.children);
-      const t = cells[idx]; if (!t) return [];
-      const tr = t.getBoundingClientRect();
-      const cx = tr.left + tr.width/2; const cy = tr.top + tr.height/2;
-      const list = cells.map((el,i)=>{
-        if (i===idx) return null;
-        const r = el.getBoundingClientRect();
-        const ex = r.left + r.width/2; const ey = r.top + r.height/2;
-        const d2 = (ex-cx)*(ex-cx) + (ey-cy)*(ey-cy);
-        return { i, d2 };
-      }).filter(Boolean).sort((a,b)=>a.d2-b.d2);
-      return list.slice(0, max).map(o=>o.i);
+    if(error){
+      console.error("Error cargando imágenes:", error);
+      return;
     }
 
-    let current = -1;
-    $honeycomb.addEventListener('mousemove', (e)=>{
-      const hex = e.target.closest('.hex'); if (!hex) return;
-      const idx = Array.prototype.indexOf.call($honeycomb.children, hex);
-      if (idx === current) return; current = idx;
+    const gallery = document.getElementById("gallery");
+    let rowCount = 0;
 
-      Array.from($honeycomb.children).forEach(el=>el.classList.remove('hovered','neighbor'));
-      hex.classList.add('hovered');
-      neighbors(idx, 6).forEach(n=>{
-        const el = $honeycomb.children[n]; if (el) el.classList.add('neighbor');
-      });
-    });
-    $honeycomb.addEventListener('mouseleave', ()=>{
-      current = -1;
-      Array.from($honeycomb.children).forEach(el=>el.classList.remove('hovered','neighbor'));
-    });
-  }
+    for (let file of data){
+      let url = `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${file.name}`;
 
-  (async function init(){
-    try{
-      $status.textContent = 'Cargando fotos desde Supabase…';
-      const files = await listAllFiles(BUCKET_NAME, FOLDER);
-      if (!files.length){
-        $status.textContent = 'No se encontraron imágenes en el bucket/carpeta configurados.';
-        return;
+      // 🔹 Conversión de .heic a PNG/JPG para compatibilidad
+      if (file.name.toLowerCase().endsWith(".heic")) {
+        url += "?format=png";
       }
 
-      // Crear placeholders y preparar lazy con data-*
-      const frag = document.createDocumentFragment();
-      for (const path of files){
-        const hex = createHexPlaceholder();
-        const img = hex.querySelector('img');
+      const hex = document.createElement("div");
+      hex.className = "hex" + (rowCount % 2 ? " row-first-offset" : "");
+      hex.innerHTML = `
+        <div class="hex-inner">
+          <img src="${url}" loading="lazy" alt="Foto" />
+        </div>
+      `;
+      gallery.appendChild(hex);
 
-        // Obtener URL (no asignamos a src aún; usamos data-src)
-        const url = await getUrl(BUCKET_NAME, path);
-        const lower = path.toLowerCase();
-        const ext = lower.endsWith('.heic') ? 'heic' :
-                    lower.endsWith('.heif') ? 'heif' : 'other';
-
-        img.dataset.src = url;
-        img.dataset.ext = ext;
-
-        frag.appendChild(hex);
-        // Observar para carga perezosa
-        io.observe(img);
-      }
-      $honeycomb.appendChild(frag);
-      recalcHoneycombOffsets();
-      $status.classList.add('hide');
-      $count.textContent = `${files.length} fotos`;
-
-      // Interacción
-      setupHoverPlay();
-
-      // Recalcular offsets cuando cambie el tamaño
-      const debounce = (fn, ms=80)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
-      window.addEventListener('resize', debounce(recalcHoneycombOffsets, 60));
-      $reloadLayoutBtn.addEventListener('click', recalcHoneycombOffsets);
-
-    }catch(err){
-      console.error(err);
-      $status.textContent = 'Error al cargar fotos. Revisa tu URL de proyecto, anon key y permisos del bucket.';
+      rowCount++;
     }
-  })();
-  </script>
+  }
+
+  loadImages();
+</script>
 </body>
 </html>
+
 
 
