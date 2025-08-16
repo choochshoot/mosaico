@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Panal de Fotos (Hexágonos) desde Supabase</title>
+
+<!-- Estilos del panal -->
+<style>
+  :root{
+    /* Ajusta el tamaño del hexágono y el gap ultra fino */
+    --hex-size: 140px;   /* ancho del hexágono */
+    --gap: 2px;          /* separación finita entre celdas */
+    /* Derivados para proporciones de hexágono (punta arriba / pointy-top) */
+    --hex-height: calc(var(--hex-size) * 1.1547);        /* ≈ 2 * (size * sin(60°)) */
+    --vertical-overlap: calc(var(--hex-height) * 0.25);  /* para entrelazar filas */
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #0b0b0b;
+    color: #eaeaea;
+  }
+
+  .wrap{
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .title{
+    font-size: clamp(18px, 2.8vw, 28px);
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  .sub{
+    opacity: .8;
+    margin: 0 0 18px;
+    font-size: 14px;
+  }
+
+  /* Contenedor flexible que permite “wrap” de hexágonos */
+  .honeycomb{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--gap);
+    /* tiramos un poquito hacia arriba para que el solape vertical se vea compacto */
+    margin-top: calc(var(--vertical-overlap) * -1);
+  }
+
+  /* Cada celda base con tamaño del hex y solape vertical negativo */
+  .hex{
+    position: relative;
+    width: var(--hex-size);
+    height: var(--hex-height);
+    margin-top: calc(var(--vertical-overlap) * -1);
+    flex: 0 0 auto;
+    /* borde ultra fino para enfatizar la retícula */
+    outline: 1px solid rgba(255,255,255,.06);
+    outline-offset: -1px;
+  }
+
+  /* Clip del polígono hexagonal (punta arriba / pointy-top) */
+  .hex > .hex-inner{
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(
+      50% 0%,
+      93% 25%,
+      93% 75%,
+      50% 100%,
+      7% 75%,
+      7% 25%
+    );
+    overflow: hidden;
+    background: #111; /* fallback mientras carga */
+  }
+
+  .hex img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: saturate(1.02) contrast(1.02);
+    transition: transform .25s ease;
+  }
+
+  .hex:hover img{
+    transform: scale(1.03);
+  }
+
+  /* Fila desplazada: aplicamos margen-left a la PRIMERA celda de esa fila */
+  .row-first-offset{
+    margin-left: calc(var(--hex-size) / 2 + var(--gap) / 2);
+  }
+
+  /* Responsivo: hacemos celdas un poco más grandes en pantallas anchas */
+  @media (min-width: 1100px){
+    :root { --hex-size: 160px; }
+  }
+  @media (min-width: 1500px){
+    :root { --hex-size: 180px; }
+  }
+
+  /* Estado vacío / errores */
+  .status{
+    margin-top: 8px;
+    font-size: 13px;
+    opacity: .85;
+  }
+  .hide{ display: none; }
+
+  /* Botón recargar layout por si el contenedor cambia de ancho dinámicamente */
+  .toolbar{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .btn{
+    background: #1f1f1f;
+    border: 1px solid #333;
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: #eaeaea;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .btn:hover{ background: #262626; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">Galería tipo panal</h1>
+    <p class="sub">
+      Las imágenes se cargan desde Supabase Storage y se renderizan en hexágonos pegaditos (panal).
+    </p>
+
+    <div class="toolbar">
+      <button class="btn" id="reloadLayoutBtn" type="button">Recalcular panal</button>
+      <span id="count" class="status"></span>
+    </div>
+
+    <div id="honeycomb" class="honeycomb" aria-live="polite"></div>
+    <div id="status" class="status">Cargando fotos…</div>
+  </div>
+
+  <!-- Supabase JS v2 (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    /******************  CONFIGURA AQUÍ  ******************/
+    const SUPABASE_URL = 'https://cskqlyauszpgjvwgenth.supabase.co';  // <-- pega aquí tu Project URL
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNza3FseWF1c3pwZ2p2d2dlbnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTY4ODMsImV4cCI6MjA3MDE5Mjg4M30.HAZEfpAH2AZzoDBmsUOe3O33oAFbcRIJksZLOyeRvPk';                    // <-- pega aquí tu anon key
+    const BUCKET_NAME = 'imagenes-usuarios';                    // <-- bucket con tus fotos
+    const FOLDER = '';  // si tus fotos están dentro de una carpeta del bucket, indícala aquí. Ej: 'eventos/fiesta'
+    const useSignedUrls = false; // true si tu bucket NO es público
+    // Opciones de carga
+    const MAX_FILES = 500;          // cuántos archivos máximo leer
+    const SORT_DESC = true;         // orden por fecha (más recientes primero)
+    /******************************************************/
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $honeycomb = document.getElementById('honeycomb');
+    const $status = document.getElementById('status');
+    const $count = document.getElementById('count');
+    const $reloadLayoutBtn = document.getElementById('reloadLayoutBtn');
+
+    // Utilidad: listar todos los archivos del bucket (con paginación simple)
+    async function listAllFiles(bucket, path = '', limit = MAX_FILES){
+      const pageSize = 100;
+      let all = [];
+      let offset = 0;
+      while(all.length < limit){
+        const { data, error } = await supabase.storage.from(bucket).list(path, {
+          limit: Math.min(pageSize, limit - all.length),
+          offset,
+          sortBy: { column: 'updated_at', order: SORT_DESC ? 'desc' : 'asc' }
+        });
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        // filtra solo objetos (no carpetas)
+        const files = data.filter(x => x && x.metadata && x.name);
+        all = all.concat(files.map(f => (path ? path.replace(/\/+$/,'') + '/' : '') + f.name));
+        if (data.length < pageSize) break;
+        offset += data.length;
+      }
+      return all;
+    }
+
+    async function getPublicUrl(bucket, filePath){
+      if (useSignedUrls){
+        const { data, error } = await supabase
+          .storage
+          .from(bucket)
+          .createSignedUrl(filePath, 60 * 60); // 1 hora
+        if (error) throw error;
+        return data.signedUrl;
+      } else {
+        const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+        return data.publicUrl;
+      }
+    }
+
+    // Render de un hex con imagen
+    function renderHex(src, altText = ''){
+      const hex = document.createElement('div');
+      hex.className = 'hex';
+      const inner = document.createElement('div');
+      inner.className = 'hex-inner';
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.alt = altText || 'Foto';
+      img.src = src;
+      inner.appendChild(img);
+      hex.appendChild(inner);
+      return hex;
+    }
+
+    // Calcula qué filas deben ir desplazadas:
+    // Estrategia: recorre los hijos y detecta cambios de offsetTop (nueva fila).
+    // Para cada fila impar, le añade clase "row-first-offset" al primer elemento.
+    function recalcHoneycombOffsets(){
+      const cells = Array.from($honeycomb.children);
+      // Limpia offsets previos
+      cells.forEach(c => c.classList.remove('row-first-offset'));
+      let currentTop = null;
+      let rowIndex = -1;
+      let firstInRow = null;
+
+      for (const cell of cells){
+        const top = cell.offsetTop;
+        if (currentTop === null || top !== currentTop){
+          // nueva fila
+          currentTop = top;
+          rowIndex++;
+          firstInRow = cell;
+          // si fila impar => desplazar primera celda media anchura
+          if (rowIndex % 2 === 1){
+            firstInRow.classList.add('row-first-offset');
+          }
+        }
+      }
+    }
+
+    // Observa cambios de tamaño para recalcular offsets
+    let resizeRaf = null;
+    function scheduleRecalc(){
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        recalcHoneycombOffsets();
+      });
+    }
+    window.addEventListener('resize', scheduleRecalc);
+    $reloadLayoutBtn.addEventListener('click', scheduleRecalc);
+
+    // Carga y pinta
+    (async function init(){
+      try{
+        $status.textContent = 'Cargando fotos desde Supabase…';
+
+        const files = await listAllFiles(BUCKET_NAME, FOLDER);
+        if (!files.length){
+          $status.textContent = 'No se encontraron imágenes en el bucket/carpeta configurados.';
+          return;
+        }
+
+        // Crea nodos antes de pedir URLs para que el usuario vea progreso
+        const frag = document.createDocumentFragment();
+        files.forEach(() => {
+          const placeholder = renderHex('', 'Cargando…');
+          // mientras carga URL, queda el fondo oscuro
+          frag.appendChild(placeholder);
+        });
+        $honeycomb.appendChild(frag);
+        scheduleRecalc();
+
+        // Ahora obtiene URLs y actualiza <img> de cada hex
+        for (let i = 0; i < files.length; i++){
+          try{
+            const src = await getPublicUrl(BUCKET_NAME, files[i]);
+            const hex = $honeycomb.children[i];
+            const img = hex.querySelector('img');
+            img.src = src;
+            img.alt = files[i].split('/').pop();
+          }catch(err){
+            console.warn('Error URL para', files[i], err);
+          }
+        }
+
+        $count.textContent = `${files.length} fotos`;
+        $status.classList.add('hide');
+        // Recalcular offsets al final por si cambió el alto de línea
+        scheduleRecalc();
+
+      }catch(err){
+        console.error(err);
+        $status.textContent = 'Ocurrió un error al cargar las fotos. Revisa tu URL de proyecto, anon key y permisos del bucket.';
+      }
+    })();
+  </script>
+</body>
+</html>
