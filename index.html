@@ -3,177 +3,92 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Panal Neon Animado (Supabase + HEIC→PNG)</title>
+<title>Panal Neón · Lazy + HEIC→PNG/JPG</title>
 <style>
   :root{
-    /* Tamaño del hexágono y separación finísima tipo panal */
-    --hex-size: 150px;     /* ancho nominal del hexágono */
-    --gap: 1px;            /* separación ultra fina */
-    /* Proporciones para punta arriba (pointy-top) */
+    --hex-size: 150px;
+    --gap: 1px;
     --hex-height: calc(var(--hex-size) * 1.1547);
     --vertical-overlap: calc(var(--hex-height) * 0.25);
-    /* Color de neón (blanco) */
     --neon-color: rgba(255,255,255,0.95);
-    /* Intensidad del brillo (ajusta si proyectas a mucha distancia) */
     --neon-1: 8px;
     --neon-2: 18px;
     --neon-3: 36px;
     --neon-4: 64px;
   }
-
-  * { box-sizing: border-box; }
-
+  *{ box-sizing: border-box; }
   body{
-    margin:0;
-    background:#050505;
-    color:#f3f3f3;
+    margin:0; background:#050505; color:#f3f3f3;
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   }
-
-  .wrap{
-    max-width: 1800px;
-    margin: 0 auto;
-    padding: 16px;
-  }
-
+  .wrap{ max-width:1800px; margin:0 auto; padding:16px; }
   .title{
-    margin: 0 0 8px;
-    font-weight: 800;
-    letter-spacing: .3px;
-    font-size: clamp(18px, 2.4vw, 28px);
+    margin:0 0 8px; font-weight:800; font-size:clamp(18px,2.4vw,28px);
     text-shadow:
       0 0 var(--neon-1) var(--neon-color),
       0 0 var(--neon-2) var(--neon-color);
   }
-  .sub{
-    margin: 0 0 14px;
-    opacity: .82;
-    font-size: 14px;
-  }
+  .sub{ margin:0 0 14px; opacity:.82; font-size:14px; }
 
-  /* Contenedor del panal */
   .honeycomb{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:flex-start;
-    gap: var(--gap);
-    margin-top: calc(var(--vertical-overlap) * -1);
+    display:flex; flex-wrap:wrap; align-items:flex-start;
+    gap:var(--gap); margin-top: calc(var(--vertical-overlap) * -1);
   }
-
-  /* Celda hexagonal base */
   .hex{
-    position:relative;
-    width: var(--hex-size);
-    height: var(--hex-height);
-    margin-top: calc(var(--vertical-overlap) * -1);
-    flex: 0 0 auto;
-    /* Animación base (cada celda tendrá variables aleatorias) */
-    animation-name: floaty;
-    animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
-    /* Valores por defecto; se sobrescriben por celda con inline CSS vars */
-    --float-amp: 2px;         /* amplitud vertical */
-    --float-rot: 1deg;        /* amplitud rotación */
-    --float-dur: 6s;          /* duración */
-    --float-delay: 0s;        /* retraso */
-    animation-duration: var(--float-dur);
-    animation-delay: var(--float-delay);
-    will-change: transform;
+    position:relative; width:var(--hex-size); height:var(--hex-height);
+    margin-top: calc(var(--vertical-overlap) * -1); flex:0 0 auto;
+    animation: floaty var(--float-dur,6s) ease-in-out infinite;
+    animation-delay: var(--float-delay,0s);
   }
-
-  /* Recorte hexagonal y brillo neón alrededor */
   .hex-inner{
-    position:absolute;
-    inset:0;
-    clip-path: polygon(
-      50% 0%,
-      93% 25%,
-      93% 75%,
-      50% 100%,
-      7% 75%,
-      7% 25%
-    );
-    overflow:hidden;
-    background:#121212;
-    /* Efecto de neón blanco (varios halos) */
+    position:absolute; inset:0;
+    clip-path: polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+    overflow:hidden; background:#121212;
+    /* Marco neón alrededor de cada hexágono */
     box-shadow:
       0 0 var(--neon-1) var(--neon-color),
       0 0 var(--neon-2) var(--neon-color),
       0 0 var(--neon-3) var(--neon-color),
       0 0 var(--neon-4) var(--neon-color);
-    /* extra glow externo respetando el clip gracias a filter */
     filter:
-      drop-shadow(0 0 calc(var(--neon-1) * .8) var(--neon-color))
-      drop-shadow(0 0 calc(var(--neon-2) * .8) var(--neon-color));
-    border: 1px solid rgba(255,255,255,0.12); /* leve filo para definir borde */
+      drop-shadow(0 0 calc(var(--neon-1)*.8) var(--neon-color))
+      drop-shadow(0 0 calc(var(--neon-2)*.8) var(--neon-color));
+    border:1px solid rgba(255,255,255,.12);
   }
-
   .hex img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
+    width:100%; height:100%; object-fit:cover; display:block;
     transition: transform .28s ease, filter .28s ease;
     filter: saturate(1.06) contrast(1.04) brightness(1.02);
-    will-change: transform;
   }
-
-  /* Animación flotante base (valores tomados de variables por celda) */
   @keyframes floaty{
-    0%   { transform: translateY(0) rotate(0deg); }
-    25%  { transform: translateY(calc(var(--float-amp) * -1)) rotate(calc(var(--float-rot))); }
-    50%  { transform: translateY(calc(var(--float-amp) * 0.5)) rotate(calc(var(--float-rot) * -1)); }
-    75%  { transform: translateY(calc(var(--float-amp) * -0.5)) rotate(calc(var(--float-rot) * 0.5)); }
-    100% { transform: translateY(0) rotate(0deg); }
+    0%{ transform: translateY(0) rotate(0deg); }
+    25%{ transform: translateY(-2px) rotate(1deg); }
+    50%{ transform: translateY(1px) rotate(-1deg); }
+    75%{ transform: translateY(-1px) rotate(.5deg); }
+    100%{ transform: translateY(0) rotate(0deg); }
   }
-
-  /* Interacción: hexágono “protagonista” al hover */
-  .hex.hovered .hex-inner{ 
+  .hex.hovered .hex-inner{
     box-shadow:
-      0 0 calc(var(--neon-1) * 1.2) var(--neon-color),
-      0 0 calc(var(--neon-2) * 1.2) var(--neon-color),
-      0 0 calc(var(--neon-3) * 1.2) var(--neon-color),
-      0 0 calc(var(--neon-4) * 1.2) var(--neon-color);
+      0 0 calc(var(--neon-1)*1.2) var(--neon-color),
+      0 0 calc(var(--neon-2)*1.2) var(--neon-color),
+      0 0 calc(var(--neon-3)*1.2) var(--neon-color),
+      0 0 calc(var(--neon-4)*1.2) var(--neon-color);
     filter:
-      drop-shadow(0 0 calc(var(--neon-2) * .9) var(--neon-color))
-      drop-shadow(0 0 calc(var(--neon-3) * .7) var(--neon-color));
+      drop-shadow(0 0 calc(var(--neon-2)*.9) var(--neon-color))
+      drop-shadow(0 0 calc(var(--neon-3)*.7) var(--neon-color));
   }
-  .hex.hovered img{
-    transform: scale(1.08);
-  }
+  .hex.hovered img{ transform: scale(1.08); }
+  .hex.neighbor img{ transform: scale(1.03) rotate(1.2deg); }
 
-  /* Vecinos con leve reacción */
-  .hex.neighbor img{
-    transform: scale(1.03) rotate(1.2deg);
-  }
+  .row-first-offset{ margin-left: calc(var(--hex-size)/2 + var(--gap)/2); }
 
-  /* Desplazamiento de filas impares para entrelazar el panal */
-  .row-first-offset{
-    margin-left: calc(var(--hex-size) / 2 + var(--gap) / 2);
-  }
+  @media (min-width:1200px){ :root{ --hex-size:170px; } }
+  @media (min-width:1600px){ :root{ --hex-size:190px; } }
 
-  /* Ajustes responsive: hexágonos más grandes en pantallas amplias */
-  @media (min-width: 1200px){
-    :root { --hex-size: 170px; }
-  }
-  @media (min-width: 1600px){
-    :root { --hex-size: 190px; }
-  }
-
-  .toolbar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin: 8px 0 14px;
-  }
+  .toolbar{ display:flex; gap:8px; align-items:center; margin:8px 0 14px; }
   .btn{
-    background:#161616;
-    border:1px solid #2a2a2a;
-    color:#f0f0f0;
-    padding:8px 12px;
-    border-radius: 12px;
-    font-size:13px;
-    cursor:pointer;
+    background:#161616; border:1px solid #2a2a2a; color:#f0f0f0;
+    padding:8px 12px; border-radius:12px; font-size:13px; cursor:pointer;
   }
   .btn:hover{ background:#1c1c1c; }
   .status{ font-size:13px; opacity:.82; }
@@ -183,7 +98,7 @@
 <body>
   <div class="wrap">
     <h1 class="title">Galería Panal Neón</h1>
-    <p class="sub">Hexágonos con brillo blanco tipo neón, animaciones vivas y carga desde Supabase (HEIC→PNG cuando es posible).</p>
+    <p class="sub">Lazy loading + conversión HEIC→PNG/JPG en el navegador. Hexágonos con marco neón blanco.</p>
 
     <div class="toolbar">
       <button id="reloadLayoutBtn" class="btn" type="button">Recalcular panal</button>
@@ -194,18 +109,19 @@
     <div id="status" class="status">Cargando fotos…</div>
   </div>
 
-  <!-- Supabase JS v2 (CDN) -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Fallback de conversión HEIC a JPG (si el navegador no decodifica nativamente) -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
   <script>
   /******************  CONFIGURA AQUÍ  ******************/
   const SUPABASE_URL = 'https://cskqlyauszpgjvwgenth.supabase.co';  // <-- pega aquí tu Project URL
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNza3FseWF1c3pwZ2p2d2dlbnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTY4ODMsImV4cCI6MjA3MDE5Mjg4M30.HAZEfpAH2AZzoDBmsUOe3O33oAFbcRIJksZLOyeRvPk';                    // <-- pega aquí tu anon key
   const BUCKET_NAME = 'imagenes-usuarios';                    // <-- bucket con tus fotos
-  const FOLDER = '';  // si tus fotos están dentro de una subcarpeta. Ej: 'eventos/fiesta'
+  const FOLDER = '';  // subcarpeta dentro del bucket, si aplica. Ej: 'eventos/fiesta'
   const useSignedUrls = false; // true si tu bucket NO es público
-  // Opciones de carga
-  const MAX_FILES = 500;
-  const SORT_DESC = true; // ordenar por updated_at desc
+  const MAX_FILES = 500;       // máximo a listar
+  const SORT_DESC = true;      // ordenar por updated_at desc
   /******************************************************/
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -214,7 +130,7 @@
   const $count = document.getElementById('count');
   const $reloadLayoutBtn = document.getElementById('reloadLayoutBtn');
 
-  // Lista de archivos del bucket con paginación simple
+  // Listar archivos del bucket
   async function listAllFiles(bucket, path = '', limit = MAX_FILES){
     const pageSize = 100;
     let all = [];
@@ -235,205 +151,182 @@
     return all;
   }
 
-  async function getPublicUrl(bucket, filePath){
+  // Obtener URL pública (o firmada)
+  async function getUrl(bucket, filePath){
     if (useSignedUrls){
-      const { data, error } = await supabase
-        .storage
-        .from(bucket)
-        .createSignedUrl(filePath, 60 * 60); // 1h
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(filePath, 3600);
       if (error) throw error;
       return data.signedUrl;
     } else {
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      return data.publicUrl;
+      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
     }
   }
 
-  // Render de un hex con variables aleatorias para animación viva
-  function renderHexWithRandomAnim(){
+  // Crea una celda hex con animación aleatoria y <img loading="lazy" data-src="">
+  function createHexPlaceholder(){
     const hex = document.createElement('div');
     hex.className = 'hex';
+    // random anim params
+    hex.style.setProperty('--float-dur', (5 + Math.random()*4).toFixed(2) + 's');
+    hex.style.setProperty('--float-delay', (Math.random()*3).toFixed(2) + 's');
+
     const inner = document.createElement('div');
     inner.className = 'hex-inner';
     const img = document.createElement('img');
-    img.loading = 'lazy';
+    img.loading = 'lazy';    // ← lazy real del navegador
     img.decoding = 'async';
     img.alt = 'Foto';
     inner.appendChild(img);
     hex.appendChild(inner);
-
-    // Aleatorizar parámetros de animación por cada celda
-    // amplitud vertical: 1.5px a 4px
-    const amp = (1.5 + Math.random() * 2.5).toFixed(2) + 'px';
-    // rotación: 0.6deg a 1.8deg
-    const rot = (0.6 + Math.random() * 1.2).toFixed(2) + 'deg';
-    // duración: 5s a 9s
-    const dur = (5 + Math.random() * 4).toFixed(2) + 's';
-    // delay: 0s a 3s
-    const delay = (Math.random() * 3).toFixed(2) + 's';
-
-    hex.style.setProperty('--float-amp', amp);
-    hex.style.setProperty('--float-rot', rot);
-    hex.style.setProperty('--float-dur', dur);
-    hex.style.setProperty('--float-delay', delay);
-
     return hex;
   }
 
-  // Recalcular filas para aplicar el offset de las impares
+  // Recalcula offsets para entrelazar filas
   function recalcHoneycombOffsets(){
     const cells = Array.from($honeycomb.children);
     cells.forEach(c => c.classList.remove('row-first-offset'));
     let currentTop = null;
     let rowIndex = -1;
-
     for (const cell of cells){
       const top = cell.offsetTop;
       if (currentTop === null || top !== currentTop){
-        currentTop = top;
-        rowIndex++;
-        if (rowIndex % 2 === 1){
-          cell.classList.add('row-first-offset');
-        }
+        currentTop = top; rowIndex++;
+        if (rowIndex % 2 === 1) cell.classList.add('row-first-offset');
       }
     }
   }
 
-  // Vecinos “inteligentes”: calcula los más cercanos por posición
-  function nearestNeighbors(index, maxNeighbors = 6){
-    const cells = Array.from($honeycomb.children);
-    const target = cells[index];
-    if (!target) return [];
-    const rectT = target.getBoundingClientRect();
-
-    const withDist = cells.map((el, i) => {
-      if (i === index) return null;
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width/2;
-      const cy = r.top + r.height/2;
-      const tx = rectT.left + rectT.width/2;
-      const ty = rectT.top + rectT.height/2;
-      const dx = cx - tx;
-      const dy = cy - ty;
-      return { i, d2: dx*dx + dy*dy };
-    }).filter(Boolean);
-
-    withDist.sort((a,b) => a.d2 - b.d2);
-    return withDist.slice(0, maxNeighbors).map(o => o.i);
-  }
-
-  // Conversión HEIC→PNG en el cliente (si createImageBitmap puede decodificarlo)
-  async function convertHeicToPng(url){
+  // HEIC → PNG vía createImageBitmap (rápido); si falla, intentamos heic2any→JPG
+  async function heicToDisplayable(url){
     try {
       const resp = await fetch(url, { cache: 'no-store' });
       const blob = await resp.blob();
-      // Algunos navegadores no decodifican HEIC; esto puede lanzar error
-      const bitmap = await createImageBitmap(blob);
-      const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(bitmap, 0, 0);
-      // PNG para máxima compatibilidad visual en proyección
-      return canvas.toDataURL('image/png');
+      // 1) intento nativo
+      try{
+        const bitmap = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width; canvas.height = bitmap.height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        return canvas.toDataURL('image/png'); // PNG
+      }catch(e){
+        // 2) fallback: heic2any → JPG
+        if (window.heic2any){
+          const out = await heic2any({ blob, toType: 'image/jpeg', quality: 0.92 });
+          return URL.createObjectURL(out);
+        }
+        throw e; // re-lanza si no hay fallback
+      }
     } catch (err){
-      console.warn('No se pudo convertir HEIC/HEIF → PNG:', err);
+      console.warn('HEIC no convertible:', err);
       return null;
     }
   }
 
-  // Carga y pinta
+  // Carga perezosa real: solo descarga/convierte al entrar en viewport
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(async (entry)=>{
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      io.unobserve(img);
+
+      const meta = img.dataset; // {src, ext}
+      let finalUrl = meta.src;
+      if (meta.ext === 'heic' || meta.ext === 'heif'){
+        const converted = await heicToDisplayable(meta.src);
+        if (!converted){
+          // omitir si no pudo convertirse
+          img.closest('.hex').style.display = 'none';
+          return;
+        }
+        finalUrl = converted;
+      }
+      img.src = finalUrl;
+    });
+  }, { rootMargin: '200px 0px', threshold: 0.01 });
+
+  // Interacciones “juego” entre celdas
+  function setupHoverPlay(){
+    function neighbors(idx, max=6){
+      const cells = Array.from($honeycomb.children);
+      const t = cells[idx]; if (!t) return [];
+      const tr = t.getBoundingClientRect();
+      const cx = tr.left + tr.width/2; const cy = tr.top + tr.height/2;
+      const list = cells.map((el,i)=>{
+        if (i===idx) return null;
+        const r = el.getBoundingClientRect();
+        const ex = r.left + r.width/2; const ey = r.top + r.height/2;
+        const d2 = (ex-cx)*(ex-cx) + (ey-cy)*(ey-cy);
+        return { i, d2 };
+      }).filter(Boolean).sort((a,b)=>a.d2-b.d2);
+      return list.slice(0, max).map(o=>o.i);
+    }
+
+    let current = -1;
+    $honeycomb.addEventListener('mousemove', (e)=>{
+      const hex = e.target.closest('.hex'); if (!hex) return;
+      const idx = Array.prototype.indexOf.call($honeycomb.children, hex);
+      if (idx === current) return; current = idx;
+
+      Array.from($honeycomb.children).forEach(el=>el.classList.remove('hovered','neighbor'));
+      hex.classList.add('hovered');
+      neighbors(idx, 6).forEach(n=>{
+        const el = $honeycomb.children[n]; if (el) el.classList.add('neighbor');
+      });
+    });
+    $honeycomb.addEventListener('mouseleave', ()=>{
+      current = -1;
+      Array.from($honeycomb.children).forEach(el=>el.classList.remove('hovered','neighbor'));
+    });
+  }
+
   (async function init(){
     try{
       $status.textContent = 'Cargando fotos desde Supabase…';
-
       const files = await listAllFiles(BUCKET_NAME, FOLDER);
       if (!files.length){
         $status.textContent = 'No se encontraron imágenes en el bucket/carpeta configurados.';
         return;
       }
 
-      // placeholders visibles mientras se resuelven URLs
+      // Crear placeholders y preparar lazy con data-*
       const frag = document.createDocumentFragment();
-      files.forEach(() => frag.appendChild(renderHexWithRandomAnim()));
+      for (const path of files){
+        const hex = createHexPlaceholder();
+        const img = hex.querySelector('img');
+
+        // Obtener URL (no asignamos a src aún; usamos data-src)
+        const url = await getUrl(BUCKET_NAME, path);
+        const lower = path.toLowerCase();
+        const ext = lower.endsWith('.heic') ? 'heic' :
+                    lower.endsWith('.heif') ? 'heif' : 'other';
+
+        img.dataset.src = url;
+        img.dataset.ext = ext;
+
+        frag.appendChild(hex);
+        // Observar para carga perezosa
+        io.observe(img);
+      }
       $honeycomb.appendChild(frag);
       recalcHoneycombOffsets();
-
-      // Rellenar imágenes
-      for (let i = 0; i < files.length; i++){
-        try{
-          const path = files[i];
-          const url0 = await getPublicUrl(BUCKET_NAME, path);
-          const lower = path.toLowerCase();
-          let finalUrl = url0;
-
-          if (lower.endsWith('.heic') || lower.endsWith('.heif')){
-            const converted = await convertHeicToPng(url0);
-            if (converted) finalUrl = converted;
-            else {
-              // Si no se puede decodificar HEIC, omitir celda
-              $honeycomb.children[i].style.display = 'none';
-              continue;
-            }
-          }
-
-          const img = $honeycomb.children[i].querySelector('img');
-          img.src = finalUrl;
-          img.alt = path.split('/').pop();
-        }catch(err){
-          console.warn('Error con archivo', files[i], err);
-        }
-      }
-
-      $count.textContent = `${files.length} fotos`;
       $status.classList.add('hide');
+      $count.textContent = `${files.length} fotos`;
 
-      // Interacción: hover con vecinos “jugando”
-      let currentHoverIdx = -1;
-      $honeycomb.addEventListener('mousemove', (e)=>{
-        const hex = e.target.closest('.hex');
-        if (!hex) return;
-        const idx = Array.prototype.indexOf.call($honeycomb.children, hex);
-        if (idx === currentHoverIdx) return;
-        currentHoverIdx = idx;
+      // Interacción
+      setupHoverPlay();
 
-        // limpiar estados previos
-        Array.from($honeycomb.children).forEach(el=>{
-          el.classList.remove('hovered', 'neighbor');
-        });
-
-        // activar hovered
-        hex.classList.add('hovered');
-
-        // vecinos más cercanos por distancia visual (independiente de DOM index)
-        const near = nearestNeighbors(idx, 6);
-        near.forEach(n => {
-          const el = $honeycomb.children[n];
-          if (el) el.classList.add('neighbor');
-        });
-      });
-
-      // Al salir del panal, limpiar estados
-      $honeycomb.addEventListener('mouseleave', ()=>{
-        Array.from($honeycomb.children).forEach(el=>{
-          el.classList.remove('hovered', 'neighbor');
-        });
-        currentHoverIdx = -1;
-      });
-
-      // Recalcular offsets al redimensionar o a demanda
-      const debounce = (fn, ms=100)=>{
-        let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
-      };
+      // Recalcular offsets cuando cambie el tamaño
+      const debounce = (fn, ms=80)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
       window.addEventListener('resize', debounce(recalcHoneycombOffsets, 60));
       $reloadLayoutBtn.addEventListener('click', recalcHoneycombOffsets);
 
     }catch(err){
       console.error(err);
-      $status.textContent = 'Ocurrió un error al cargar las fotos. Revisa tu URL de proyecto, anon key y permisos del bucket.';
+      $status.textContent = 'Error al cargar fotos. Revisa tu URL de proyecto, anon key y permisos del bucket.';
     }
   })();
   </script>
 </body>
 </html>
+
 
